@@ -14,13 +14,13 @@ class Interchange {
     private final String segmentSeparator;
     private final String elementSeparator;
 
-    public String isa;
-    public String gs;
-    public String ge;
-    public String iea;
-    public final List<Transaction> transactions = new ArrayList<>();
+    String isa;
+    String gs;
+    String ge;
+    String iea;
+    final List<Transaction> transactions = new ArrayList<>();
 
-    public Interchange(Character interchangeSegmentSeparator, Character interchangeElementSeparator) {
+    Interchange(Character interchangeSegmentSeparator, Character interchangeElementSeparator) {
         segmentSeparator = interchangeSegmentSeparator.toString();
         elementSeparator = interchangeElementSeparator.toString();
     }
@@ -51,9 +51,9 @@ class Interchange {
         return result.replace(" ", "_");
     }
 
-    public Map<String, String> writer() {
+    Map<String, String> writer() {
 
-        Map results = new HashMap();
+        Map<String, String> results = new HashMap<>();
 
         transactions.forEach(t -> {
 

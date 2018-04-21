@@ -8,11 +8,11 @@ import java.util.List;
  * Just load the data
  */
 
-public class Transaction {
-    public final String st;
-    public final List<String> segments = new ArrayList<>();
+class Transaction {
+    final String st;
+    final List<String> segments = new ArrayList<>();
 
-    public Transaction(String transactionSt) {
+    Transaction(String transactionSt) {
         st = transactionSt;
     }
 }

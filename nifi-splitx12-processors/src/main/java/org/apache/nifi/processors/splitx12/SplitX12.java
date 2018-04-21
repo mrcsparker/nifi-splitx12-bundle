@@ -1,33 +1,16 @@
 package org.apache.nifi.processors.splitx12;
 
-import org.apache.nifi.annotation.behavior.EventDriven;
-import org.apache.nifi.annotation.behavior.InputRequirement;
-import org.apache.nifi.annotation.behavior.SideEffectFree;
-import org.apache.nifi.annotation.behavior.SupportsBatching;
-import org.apache.nifi.annotation.behavior.WritesAttribute;
-import org.apache.nifi.annotation.behavior.WritesAttributes;
+import org.apache.nifi.annotation.behavior.*;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.flowfile.attributes.CoreAttributes;
-import org.apache.nifi.processor.AbstractProcessor;
-import org.apache.nifi.processor.ProcessContext;
-import org.apache.nifi.processor.ProcessSession;
-import org.apache.nifi.processor.ProcessorInitializationContext;
-import org.apache.nifi.processor.Relationship;
+import org.apache.nifi.processor.*;
 import org.apache.nifi.processor.exception.ProcessException;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 
 @EventDriven
 @SideEffectFree
@@ -93,33 +76,14 @@ public class SplitX12 extends AbstractProcessor {
         }
 
         InputStream input = session.read(original);
-        final List<FlowFile> splits = new ArrayList<>();
         Splitter ediSplitter = new Splitter(input);
 
         try {
-            final AtomicInteger numberOfRecords = new AtomicInteger(0);
-            for (Map<String, String> ediSplits : ediSplitter.split()) {
-                for (Map.Entry<String, String> entry : ediSplits.entrySet()) {
-                    FlowFile split = session.create(original);
-                    split = session.write(split, out -> out.write(entry.getValue().getBytes("UTF-8")));
-                    split = session.putAttribute(split, "fragment.identifier", entry.getKey());
-                    split = session.putAttribute(split, "fragment.index", Integer.toString(numberOfRecords.getAndIncrement()));
-                    split = session.putAttribute(split, "segment.original.filename", split.getAttribute(CoreAttributes.FILENAME.key()));
-                    splits.add(split);
-                }
-            }
-
+            ediSplitter.splitData(session, original);
             input.close();
-
-            splits.forEach((split) -> {
-                split = session.putAttribute(split, "fragment.count", Integer.toString(numberOfRecords.get()));
-                session.transfer(split, REL_SPLIT);
-            });
 
             session.transfer(original, REL_ORIGINAL);
             session.commit();
-            getLogger().info("Split {} into {} FlowFiles", new Object[]{original, splits.size()});
-
         } catch (IOException e) {
             getLogger().error("IOException: " + e.getMessage());
             session.transfer(original, REL_FAILURE);
